@@ -16,11 +16,14 @@ const initialFighters = [
   { id: 10, name: 'Leader', price: 22, strength: 7, agility: 6, img: 'https://pages.git.generalassemb.ly/modular-curriculum-all-courses/react-state-management-lab/assets/e41f26.png' }
 ];
 
+const VISIBLE_COUNT = 3; // Number of fighters to show at once
+
 const App = () => {
   const [team, setTeam] = useState([]);
   const [money, setMoney] = useState(100);
   const [zombieFighters, setZombieFighters] = useState(initialFighters);
   const [message, setMessage] = useState('');
+  const [startIdx, setStartIdx] = useState(0);
 
   const handleAddFighter = (fighter) => {
     if (money >= fighter.price) {
@@ -28,6 +31,10 @@ const App = () => {
       setZombieFighters(zombieFighters.filter(f => f.id !== fighter.id));
       setMoney(money - fighter.price);
       setMessage('');
+      // Adjust startIdx if i needed
+      if (startIdx > 0 && startIdx > zombieFighters.length - VISIBLE_COUNT) {
+        setStartIdx(startIdx - 1);
+      }
     } else {
       setMessage('Not enough money');
     }
@@ -39,8 +46,19 @@ const App = () => {
     setMoney(money + fighter.price);
   };
 
+  const handleLeft = () => {
+    setStartIdx(idx => Math.max(0, idx - 1));
+  };
+
+  const handleRight = () => {
+    setStartIdx(idx => Math.min(zombieFighters.length - VISIBLE_COUNT, idx + 1));
+  };
+
   const totalStrength = team.reduce((acc, curr) => acc + curr.strength, 0);
   const totalAgility = team.reduce((acc, curr) => acc + curr.agility, 0);
+
+  // Only show a slice of fighters
+  const visibleFighters = zombieFighters.slice(startIdx, startIdx + VISIBLE_COUNT);
 
   return (
     <div>
@@ -49,18 +67,25 @@ const App = () => {
       {message && <p style={{ color: 'red' }}>{message}</p>}
 
       <h3>Available Recruits</h3>
-      <ul>
-        {zombieFighters.map(f => (
-          <li key={f.id}>
-            <img src={f.img} alt={f.name} width="100" />
-            <p><strong>{f.name}</strong></p>
-            <p>Price: ${f.price}</p>
-            <p>Strength: {f.strength}</p>
-            <p>Agility: {f.agility}</p>
-            <button onClick={() => handleAddFighter(f)}>Add</button>
-          </li>
-        ))}
-      </ul>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <button onClick={handleLeft} disabled={startIdx === 0}>&lt;</button>
+        <ul>
+          {visibleFighters.map(f => (
+            <li key={f.id}>
+              <img src={f.img} alt={f.name} width="100" />
+              <p><strong>{f.name}</strong></p>
+              <p>Price: ${f.price}</p>
+              <p>Strength: {f.strength}</p>
+              <p>Agility: {f.agility}</p>
+              <button onClick={() => handleAddFighter(f)}>Add</button>
+            </li>
+          ))}
+        </ul>
+        <button
+          onClick={handleRight}
+          disabled={startIdx >= zombieFighters.length - VISIBLE_COUNT}
+        >&gt;</button>
+      </div>
 
       <h3>Your Team</h3>
       {team.length === 0 ? (
